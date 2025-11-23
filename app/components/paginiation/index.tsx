@@ -48,7 +48,7 @@ const Pagination = ({ offset, setOffset, count = 0 }: PaginationProps) => {
       <div className="flex items-center gap-2">
         <button
           data-testid="previous-button"
-          className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-40"
+          className="cursor-pointer flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-40"
           disabled={currentPage === 1}
           onClick={() => goToPage(currentPage - 1)}
         >
@@ -65,7 +65,7 @@ const Pagination = ({ offset, setOffset, count = 0 }: PaginationProps) => {
             <button
               key={idx}
               onClick={() => goToPage(page as number)}
-              className={`px-3 py-2 rounded-md border ${
+              className={`cursor-pointer px-3 py-2 rounded-md border ${
                 currentPage === page
                   ? "bg-black text-white border-black"
                   : "bg-white border-gray-300"
@@ -78,7 +78,7 @@ const Pagination = ({ offset, setOffset, count = 0 }: PaginationProps) => {
 
         <button
           data-testid="next-button"
-          className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-40"
+          className="cursor-pointer flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-40"
           disabled={currentPage === totalPages}
           onClick={() => goToPage(currentPage + 1)}
         >

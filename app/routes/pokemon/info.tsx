@@ -11,7 +11,7 @@ const Info = () => {
 
   useEffect(() => {
     // if id is wrong redirect to 404
-    if (isNaN(Number(pokemonId)) || error) {
+    if (isNaN(Number(pokemonId)) || error?.response?.status === 404) {
       window.location.href = "/404";
     }
   }, [pokemonId, error]);

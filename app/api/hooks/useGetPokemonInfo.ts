@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import type { PokemonInfo } from "~/types/pokemon";
 
 const getPpkemonInfo = async (id?: string): Promise<PokemonInfo> => {
@@ -12,11 +12,13 @@ const getPpkemonInfo = async (id?: string): Promise<PokemonInfo> => {
 };
 
 export const useGetPokemonInfo = (id?: string) => {
-  const { data, error, isLoading, refetch } = useQuery({
-    queryKey: ["PokemonInfo", id],
-    queryFn: () => getPpkemonInfo(id),
-    enabled: !!id,
-  });
+  const { data, error, isLoading, refetch } = useQuery<PokemonInfo, AxiosError>(
+    {
+      queryKey: ["PokemonInfo", id],
+      queryFn: () => getPpkemonInfo(id),
+      enabled: !!id,
+    }
+  );
 
   if (error) {
     console.error("Error fetching Pokemon info:", error);
