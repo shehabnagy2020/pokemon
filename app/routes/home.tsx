@@ -1,10 +1,12 @@
 import ViewOptionsControls from "~/components/viewOptionControls";
+import type { Route } from "./+types/home";
 import { useEffect, useState } from "react";
 import PokemonCard from "~/components/pokemonCard";
 import { useGetPokemonList } from "~/api/hooks/useGetPokemonList";
 import { AiFillThunderbolt } from "react-icons/ai";
 import PokemonCardSkeleton from "~/components/pokemonCard/skeleton";
 import type { PokemonListItem } from "~/types/pokemon";
+import InfiniteScroll from "~/components/infiniteScroll";
 import { ITEMS_PER_PAGE } from "~/utils/const";
 
 export default function Home() {
@@ -75,6 +77,14 @@ export default function Home() {
             </div>
           )}
         </div>
+        {activeView === "pageControls" ? null : (
+          <InfiniteScroll
+            offset={offset}
+            setOffset={setOffset}
+            count={data?.count}
+            isLoading={isLoading}
+          />
+        )}
       </div>
     </div>
   );
