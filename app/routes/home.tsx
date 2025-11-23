@@ -5,6 +5,7 @@ import PokemonCard from "~/components/pokemonCard";
 import { useGetPokemonList } from "~/api/hooks/useGetPokemonList";
 import { AiFillThunderbolt } from "react-icons/ai";
 import PokemonCardSkeleton from "~/components/pokemonCard/skeleton";
+import Paginiation from "~/components/paginiation";
 import type { PokemonListItem } from "~/types/pokemon";
 import InfiniteScroll from "~/components/infiniteScroll";
 import { ITEMS_PER_PAGE } from "~/utils/const";
@@ -77,7 +78,13 @@ export default function Home() {
             </div>
           )}
         </div>
-        {activeView === "pageControls" ? null : (
+        {activeView === "pageControls" ? (
+          <Paginiation
+            offset={offset}
+            setOffset={setOffset}
+            count={data?.count}
+          />
+        ) : (
           <InfiniteScroll
             offset={offset}
             setOffset={setOffset}
