@@ -1,12 +1,9 @@
 import React, { useEffect } from "react";
-import { AiFillThunderbolt, AiOutlineArrowLeft } from "react-icons/ai";
+import { AiOutlineArrowLeft } from "react-icons/ai";
 import { useParams } from "react-router";
 import { useGetPokemonInfo } from "~/api/hooks/useGetPokemonInfo";
-import AbilityState from "~/components/abilityState";
 import PokemonInfoCard from "~/components/pokemonInfoCard";
 import PokemonInfoCardSkeleton from "~/components/pokemonInfoCard/skeleton";
-import StatsProgress from "~/components/statsProgress";
-import TypesBadges from "~/components/typesBadges";
 
 const Info = () => {
   const { pokemonId } = useParams();
@@ -14,10 +11,10 @@ const Info = () => {
 
   useEffect(() => {
     // if id is wrong redirect to 404
-    if (isNaN(Number(pokemonId))) {
+    if (isNaN(Number(pokemonId)) || error) {
       window.location.href = "/404";
     }
-  }, [pokemonId]);
+  }, [pokemonId, error]);
 
   return (
     <div className="bg-[#faedf7] min-h-[100vh]">
