@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import pokemonApi, { Pokemon, PokemonListResponse } from "../services/pokemonApi";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
+import pokemonApi, { Pokemon } from "../services/pokemonApi";
 
 export interface PokemonCardData {
   id: number;
@@ -80,9 +80,11 @@ interface PokemonProviderProps {
 }
 
 export const PokemonProvider = ({ children }: PokemonProviderProps) => {
-  const [allPokemonList, setAllPokemonList] = useState<PokemonCardData[]>([]);
+  const [allPokemonNames, setAllPokemonNames] = useState<{ name: string; url: string }[]>([]);
+  const [currentPagePokemon, setCurrentPagePokemon] = useState<PokemonCardData[]>([]);
   const [selectedPokemon, setSelectedPokemon] = useState<PokemonDetailsData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -92,107 +94,149 @@ export const PokemonProvider = ({ children }: PokemonProviderProps) => {
   const [paginationMode, setPaginationMode] = useState<"pages" | "infinite">("pages");
 
   const itemsPerPage = 10;
+  const fetchVersionRef = useRef(0);
 
-  const handleSetSearchTerm = (term: string) => {
-    setPage(1);
-    setAllPokemonList([]);
-    setSearchTerm(term);
-  };
-
-  const handleSetSelectedType = (type: string) => {
-    setPage(1);
-    setAllPokemonList([]);
-    setSelectedType(type);
-  };
-
-  const handleSetPaginationMode = (mode: "pages" | "infinite") => {
-    setPaginationMode(mode);
-    setPage(1);
-    setAllPokemonList([]);
-  };
-
-  const fetchPokemonTypes = useCallback(async () => {
-    try {
-      const types = await pokemonApi.getPokemonTypes();
-      setPokemonTypes(types);
-    } catch (err) {
-      console.error("Error fetching Pokemon types:", err);
-    }
+  // Fetch Pokemon types once on mount
+  useEffect(() => {
+    pokemonApi.getPokemonTypes()
+      .then((types) => setPokemonTypes(types))
+      .catch((err) => console.error("Error fetching Pokemon types:", err));
   }, []);
 
-  const fetchPage = useCallback(async (replace: boolean = true) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const offset = (page - 1) * itemsPerPage;
-      const response: PokemonListResponse = await pokemonApi.getAllPokemon(itemsPerPage, offset);
-      const data = response.results;
-      setTotalPokemonCount(response.count);
-      const pokemonDetails = await Promise.all(
-        data.map(async (pokemon, index) => {
-          // Extract id from the url (e.g. ".../pokemon/1/" -> 1)
-          // PokeAPI results are ordered by national dex, so id = offset + index + 1
-          const pokemonId = (page - 1) * itemsPerPage + index + 1;
-          try {
-            const details: Pokemon = await pokemonApi.getPokemonById(pokemonId);
-            return {
-              id: details.id,
-              name: details.name,
-              types: details.types.map((t) => t.type.name),
-              image: details.sprites.front_default || "",
-              abilities: details.abilities.map((a) => a.ability.name),
-            };
-          } catch (err) {
-            console.error(`Error fetching Pokemon ${pokemonId}:`, err);
-            return {
-              id: pokemonId,
-              name: pokemon.name || "Unknown",
-              types: [],
-              image: "",
-              abilities: [],
-            };
-          }
-        }),
-      );
+  // Fetch all Pokemon names once on mount
+  useEffect(() => {
+    pokemonApi.getAllPokemonNames()
+      .then((names) => {
+        setAllPokemonNames(names);
+      })
+      .catch((err) => console.error("Error fetching all Pokemon names:", err));
+  }, []);
 
-      const filtered = pokemonDetails.filter((p) => p.id && p.name);
-
-      if (replace) {
-        setAllPokemonList(filtered);
-      } else {
-        setAllPokemonList((prev) => [...prev, ...filtered]);
-      }
-    } catch (err) {
-      setError("Failed to fetch Pokemon data");
-      console.error(err);
-    } finally {
-      setLoading(false);
+  // Single data-fetching effect
+  useEffect(() => {
+    // Don't run until names are loaded
+    if (allPokemonNames.length === 0) {
+      return;
     }
-  }, [page]);
 
-  // Fetch next page and append (for infinite scroll)
+    const myVersion = ++fetchVersionRef.current;
+
+    const fetchData = async () => {
+      setError(null);
+
+      if (initialLoading) setInitialLoading(false);
+      setFetching(true);
+
+      try {
+        // Step 1: Compute the filtered list of names
+        let filtered = allPokemonNames;
+
+        if (searchTerm) {
+          const term = searchTerm.toLowerCase();
+          filtered = filtered.filter((p) => p.name.toLowerCase().includes(term));
+        }
+
+        if (selectedType) {
+          const typeData = await pokemonApi.getPokemonByType(selectedType);
+          // Check if we've been superseded by a newer fetch
+          if (fetchVersionRef.current !== myVersion) return;
+          const nameSet = new Set(typeData.pokemon.map((p) => p.pokemon.name));
+          filtered = filtered.filter((p) => nameSet.has(p.name));
+        }
+
+        if (fetchVersionRef.current !== myVersion) return;
+
+        setTotalPokemonCount(filtered.length);
+
+        // Step 2: Paginate
+        const offset = (page - 1) * itemsPerPage;
+        const pageItems = filtered.slice(offset, offset + itemsPerPage);
+
+        if (pageItems.length === 0) {
+          if (!(paginationMode === "infinite" && page > 1)) {
+            setCurrentPagePokemon([]);
+          }
+          setFetching(false);
+          return;
+        }
+
+        // Step 3: Fetch details for this page
+        const pokemonDetails = await Promise.all(
+          pageItems.map(async (pokemon) => {
+            const urlParts = pokemon.url.split("/").filter(Boolean);
+            const pokemonId = parseInt(urlParts[urlParts.length - 1], 10);
+            try {
+              const details = await pokemonApi.getPokemonById(pokemonId);
+              return {
+                id: details.id,
+                name: details.name,
+                types: details.types.map((t) => t.type.name),
+                image: details.sprites.front_default || "",
+                abilities: details.abilities.map((a) => a.ability.name),
+              };
+            } catch (err) {
+              console.error(`Error fetching Pokemon ${pokemonId}:`, err);
+              return {
+                id: pokemonId,
+                name: pokemon.name || "Unknown",
+                types: [],
+                image: "",
+                abilities: [],
+              };
+            }
+          })
+        );
+
+        // Check if superseded
+        if (fetchVersionRef.current !== myVersion) return;
+
+        if (paginationMode === "infinite" && page > 1) {
+          setCurrentPagePokemon((prev) => [...prev, ...pokemonDetails]);
+        } else {
+          setCurrentPagePokemon(pokemonDetails);
+        }
+      } catch (err: any) {
+        if (fetchVersionRef.current === myVersion) {
+          setError("Failed to fetch Pokemon data");
+          console.error(err);
+        }
+      } finally {
+        if (fetchVersionRef.current === myVersion) {
+          setFetching(false);
+        }
+      }
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, searchTerm, selectedType, paginationMode, allPokemonNames.length]);
+
+  const handleSetSearchTerm = useCallback((term: string) => {
+    setPage(1);
+    setSearchTerm(term);
+  }, []);
+
+  const handleSetSelectedType = useCallback((type: string) => {
+    setPage(1);
+    setSelectedType(type);
+  }, []);
+
+  const handleSetPaginationMode = useCallback((mode: "pages" | "infinite") => {
+    setPaginationMode(mode);
+    setPage(1);
+    setCurrentPagePokemon([]);
+  }, []);
+
   const loadMore = useCallback(() => {
     setPage((prev) => prev + 1);
   }, []);
 
-  // Fetch Pokemon types once on mount
-  useEffect(() => {
-    fetchPokemonTypes();
-  }, [fetchPokemonTypes]);
-
-  // Fetch data when page changes
-  useEffect(() => {
-    if (paginationMode === "infinite") {
-      // In infinite mode: page 1 replaces, page > 1 appends
-      fetchPage(page === 1);
-    } else {
-      // In pages mode: always replace
-      fetchPage(true);
-    }
-  }, [page, paginationMode, fetchPage]);
+  const fetchPage = useCallback(async () => {
+    setPage(1);
+  }, []);
 
   const fetchPokemonDetails = useCallback(async (id: number | string): Promise<PokemonDetailsData> => {
-    setLoading(true);
+    setInitialLoading(true);
     setError(null);
     try {
       const [details, species] = await Promise.all([
@@ -235,22 +279,13 @@ export const PokemonProvider = ({ children }: PokemonProviderProps) => {
       setError("Failed to fetch Pokemon details");
       throw err;
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
   }, []);
 
-  const filteredPokemon = allPokemonList.filter((pokemon) => {
-    const matchesSearch = pokemon.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesType = !selectedType || pokemon.types.includes(selectedType);
-    return matchesSearch && matchesType;
-  });
-
-  // With server-side pagination, currentPagePokemon is the filtered data for this page
-  const currentPagePokemon = filteredPokemon;
-
-  const totalPages = Math.ceil(totalPokemonCount / itemsPerPage);
+  const loading = initialLoading || fetching;
+  const filteredPokemon = currentPagePokemon;
+  const totalPages = totalPokemonCount > 0 ? Math.ceil(totalPokemonCount / itemsPerPage) : 1;
 
   const value: PokemonContextType = {
     page,
@@ -273,7 +308,7 @@ export const PokemonProvider = ({ children }: PokemonProviderProps) => {
     filteredPokemon,
     currentPagePokemon,
     loadMore,
-    hasMore: allPokemonList.length < totalPokemonCount,
+    hasMore: currentPagePokemon.length < totalPokemonCount,
   };
 
   return (

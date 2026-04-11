@@ -81,6 +81,18 @@ const pokemonApi = {
     return response.data;
   },
 
+  // Fetch all Pokemon names (lightweight, for client-side search)
+  async getAllPokemonNames(): Promise<{ name: string; url: string }[]> {
+    const allPokemon: { name: string; url: string }[] = [];
+    let url = `${BASE_URL}/pokemon?limit=10000`;
+    while (url) {
+      const response = await axios.get<PokemonListResponse>(url);
+      allPokemon.push(...response.data.results);
+      url = response.data.next || '';
+    }
+    return allPokemon;
+  },
+
   async getPokemonById(id: number | string): Promise<Pokemon> {
     const response = await axios.get<Pokemon>(`${BASE_URL}/pokemon/${id}`);
     return response.data;
@@ -96,8 +108,8 @@ const pokemonApi = {
     return response.data;
   },
 
-  async getPokemonByType(typeName: string): Promise<PokemonTypeResponse> {
-    const response = await axios.get<PokemonTypeResponse>(`${BASE_URL}/types/${typeName}/pokemon`);
+  async getPokemonByType(typeName: string): Promise<{ pokemon: { slot: number; pokemon: { name: string; url: string } }[] }> {
+    const response = await axios.get<{ pokemon: { slot: number; pokemon: { name: string; url: string } }[] }>(`${BASE_URL}/type/${typeName}`);
     return response.data;
   },
 
