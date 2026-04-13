@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
-import pokemonApi, { Pokemon } from "../services/pokemonApi";
+import pokemonApi from "../services/pokemonApi";
 
 export interface PokemonCardData {
   id: number;

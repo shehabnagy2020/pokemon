@@ -16,12 +16,12 @@ A sleek Pokémon browser/explorer application built with React and TypeScript, p
 ## Tech Stack
 
 - **React 19** — UI framework
-- **TypeScript 6** — Type safety
+- **TypeScript 5.4** — Type safety
+- **Vite** — Build tool and dev server
 - **React Router DOM 7** — Client-side routing
 - **Axios** — HTTP client for API requests
 - **Context API** — Central state management
 - **CSS3** — Plain CSS with glassmorphism and animations
-- **Jest & React Testing Library** — Testing
 
 ## Getting Started
 
@@ -41,28 +41,24 @@ cd pokemon
 npm install
 
 # Start the development server
-npm start
+npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app in your browser.
+Open [http://localhost:5173](http://localhost:5173) to view the app in your browser.
 
 ## Available Scripts
 
-### `npm start`
+### `npm run dev`
 
-Runs the app in development mode. The page will reload when you make changes.
-
-### `npm test`
-
-Launches the test runner in interactive watch mode.
+Runs the app in development mode with hot module replacement. The page will reload when you make changes.
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder. The build is optimized and ready for deployment.
+Builds the app for production to the `dist` folder. The build is optimized and ready for deployment.
 
-### `npm run eject`
+### `npm run preview`
 
-**Note: this is a one-way operation.** Once you eject, you can't go back. This copies all build configurations into your project for full control.
+Runs the production build locally for preview before deployment.
 
 ## Project Structure
 
@@ -81,7 +77,8 @@ src/
 ├── App.tsx                    # Root component with Router + Provider
 ├── App.css                    # Navbar styles
 ├── index.tsx                  # Application entry point
-└── index.css                  # Global styles (dark theme, scrollbar)
+├── index.css                  # Global styles (dark theme, scrollbar)
+└── vite-env.d.ts              # Vite environment types
 ```
 
 ## Architecture

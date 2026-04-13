@@ -41,7 +41,11 @@ function PokemonDetails() {
 
   useEffect(() => {
     if (id) {
-      fetchPokemonDetails(id).then(setPokemonData);
+      fetchPokemonDetails(id)
+        .then(setPokemonData)
+        .catch((err) => {
+          console.error('Failed to fetch Pokemon:', err);
+        });
     }
   }, [id, fetchPokemonDetails]);
 
@@ -160,7 +164,7 @@ function PokemonDetails() {
         </div>
       </div>
 
-      {pokemonData.evolutionChain && pokemonData.evolutionChain.chain && (
+      {pokemonData.evolutionChain && (
         <div className="details-section">
           <h2 className="section-title">Evolution Chain</h2>
           <div className="evolution-container">
