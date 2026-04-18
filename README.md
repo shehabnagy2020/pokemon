@@ -4,7 +4,7 @@ A sleek Pokémon browser/explorer application built with React and TypeScript, p
 
 ## Video Tour
 
-<video src="./Pokemon-Tour.mp4" controls></video>
+https://github.com/shehabnagy2020/pokemon/blob/main/Pokemon-Tour.mp4
 
 ## Features
 
