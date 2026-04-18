@@ -7,7 +7,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 function App() {
   return (
     <PokemonProvider>
-      <Router>
+      <Router basename="/pokemon">
         <div className="App">
           <nav className="app-nav">
             <div className="nav-content">
