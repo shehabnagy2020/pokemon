@@ -2,6 +2,10 @@
 
 A sleek Pokémon browser/explorer application built with React and TypeScript, powered by the [PokeAPI v2](https://pokeapi.co/). Browse, search, and explore Pokémon with detailed stats, abilities, and evolution chains — all wrapped in a beautiful dark-themed glassmorphic UI.
 
+## Video Tour
+
+<video src="./Pokemon-Tour.mp4" controls></video>
+
 ## Features
 
 - **Pokémon Gallery** — Browse all Pokémon in a responsive grid layout
